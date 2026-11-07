@@ -1,6 +1,7 @@
 <?php
 session_start();
 require 'db_connect.php';
+require 'csrf.php';
 
 if (!isset($_SESSION['user']) || $_SESSION['role'] !== 'admin') {
   header('Location: index.php');
@@ -9,6 +10,7 @@ if (!isset($_SESSION['user']) || $_SESSION['role'] !== 'admin') {
 
 // Promote/Demote/Delete Logic
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  require_csrf();
   if (isset($_POST['delete_id'])) {
     $stmt = $pdo->prepare("DELETE FROM users WHERE user_id = ?");
     $stmt->execute([$_POST['delete_id']]);
@@ -80,16 +82,19 @@ $users = $stmt->fetchAll();
               <td><?= htmlspecialchars($user['role']) ?></td>
               <td>
                 <form method="POST" class="d-inline">
+                  <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES) ?>">
                   <input type="hidden" name="delete_id" value="<?= $user['user_id'] ?>">
                   <button type="submit" class="btn btn-sm btn-danger">Delete</button>
                 </form>
                 <?php if ($user['role'] === 'user'): ?>
                   <form method="POST" class="d-inline">
+                  <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES) ?>">
                     <input type="hidden" name="promote_id" value="<?= $user['user_id'] ?>">
                     <button type="submit" class="btn btn-sm btn-success">Promote</button>
                   </form>
                 <?php elseif ($user['role'] === 'admin' && $_SESSION['user_id'] !== $user['user_id']): ?>
                   <form method="POST" class="d-inline">
+                  <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES) ?>">
                     <input type="hidden" name="demote_id" value="<?= $user['user_id'] ?>">
                     <button type="submit" class="btn btn-sm btn-warning">Demote</button>
                   </form>
