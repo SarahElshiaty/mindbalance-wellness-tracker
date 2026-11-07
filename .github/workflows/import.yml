@@ -2,6 +2,9 @@ name: Import MindBalance project
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/import.yml'
 
 permissions:
   contents: write
