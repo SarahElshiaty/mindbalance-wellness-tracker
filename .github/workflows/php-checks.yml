@@ -1,0 +1,56 @@
+name: PHP checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      mariadb:
+        image: mariadb:11
+        env:
+          MARIADB_ROOT_PASSWORD: rootpass
+          MARIADB_DATABASE: mindbalance_db
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PHP and database client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y php-cli php-mysql mariadb-client python3
+      - name: Lint PHP source
+        run: |
+          find . -maxdepth 1 -name '*.php' -print0 | xargs -0 -n 1 php -l
+      - name: Initialize test database
+        run: |
+          mariadb --host=127.0.0.1 --user=root --password=rootpass mindbalance_db < database/mindbalance_schema.sql
+      - name: Start local PHP server
+        env:
+          MINDBALANCE_DB_HOST: 127.0.0.1
+          MINDBALANCE_DB_NAME: mindbalance_db
+          MINDBALANCE_DB_USER: root
+          MINDBALANCE_DB_PASSWORD: rootpass
+        run: |
+          php -S 127.0.0.1:8080 -t . > /tmp/mindbalance-php.log 2>&1 &
+          for i in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:8080/index.php > /dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/mindbalance-php.log
+          exit 1
+      - name: Run HTTP smoke tests
+        run: |
+          python3 tests/smoke.py || { cat /tmp/mindbalance-php.log; exit 1; }
