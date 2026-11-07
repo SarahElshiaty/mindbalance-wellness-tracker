@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """HTTP smoke tests against a disposable local MindBalance instance."""
 import http.cookiejar
+import re
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -39,6 +40,21 @@ status, url, content = request(a, "history.php")
 assert status == 200 and "Automated test entry" in content, ("history", status, url)
 status, url, content = request(b, "history.php")
 assert "Automated test entry" not in content, "Another user can view mood log"
+# Try to read or modify the first user's record using a different session.
+status, url, html = request(a, "history.php")
+ids = re.findall(r'name=["\']log_id["\']\\s+value=["\'](\\d+)["\']', html)
+if not ids:
+    ids = re.findall(r'value=["\'](\\d+)["\']\\s+name=["\']log_id["\']', html)
+assert ids, "Could not identify a mood entry for ownership tests"
+log_id = ids[0]
+status, _, payload = request(b, "get_log.php?log_id=" + log_id)
+assert status in (403, 404), ("cross-user read", status, payload[:200])
+status, _, payload = request(b, "update_log.php", {
+    "log_id": log_id, "mood": "Angry", "note": "Unauthorized change",
+    "log_date": "2026-11-07"})
+status, _, html = request(a, "history.php")
+assert "Automated test entry" in html and "Unauthorized change" not in html, "Cross-user update affected the owner's record"
+print("OK cross-user mood entry read and update protections")
 print("OK mood save and per-user history")
 status, url, content = request(b, "admin.php")
 assert url.endswith("/index.php") or status in (401, 403), ("admin access", url, status)
