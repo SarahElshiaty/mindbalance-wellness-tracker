@@ -1,6 +1,7 @@
 <?php
 session_start();
 require 'db_connect.php';
+require 'csrf.php';
 
 if (!isset($_SESSION['user']) || $_SESSION['role'] !== 'admin') {
   header('Location: index.php');
@@ -10,6 +11,7 @@ if (!isset($_SESSION['user']) || $_SESSION['role'] !== 'admin') {
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  require_csrf();
   $title = trim($_POST['title']);
   $text = trim($_POST['text']);
   $category = trim($_POST['category']);
@@ -61,6 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <?php endif; ?>
 
   <form method="POST" class="mx-auto" style="max-width: 600px;">
+    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES) ?>">
     <div class="mb-3">
       <label for="title" class="form-label">Tip Title</label>
       <input type="text" class="form-control" id="title" name="title" required>
