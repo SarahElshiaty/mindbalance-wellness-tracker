@@ -42,9 +42,9 @@ status, url, content = request(b, "history.php")
 assert "Automated test entry" not in content, "Another user can view mood log"
 # Try to read or modify the first user's record using a different session.
 status, url, html = request(a, "history.php")
-ids = re.findall(r'name=["\']log_id["\']\\s+value=["\'](\\d+)["\']', html)
+ids = re.findall(r'name=["\']log_id["\']\s+value=["\'](\d+)["\']', html)
 if not ids:
-    ids = re.findall(r'value=["\'](\\d+)["\']\\s+name=["\']log_id["\']', html)
+    ids = re.findall(r'value=["\'](\d+)["\']\s+name=["\']log_id["\']', html)
 assert ids, "Could not identify a mood entry for ownership tests"
 log_id = ids[0]
 status, _, payload = request(b, "get_log.php?log_id=" + log_id)
