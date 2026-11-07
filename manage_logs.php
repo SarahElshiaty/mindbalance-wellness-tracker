@@ -1,6 +1,7 @@
 <?php
 session_start();
 require 'db_connect.php';
+require 'csrf.php';
 
 if (!isset($_SESSION['user']) || $_SESSION['role'] !== 'admin') {
   header('Location: index.php');
@@ -8,8 +9,9 @@ if (!isset($_SESSION['user']) || $_SESSION['role'] !== 'admin') {
 }
 
 // Handle deletion
-if (isset($_GET['delete'])) {
-  $logId = (int) $_GET['delete'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete'])) {
+  require_csrf();
+  $logId = (int) $_POST['delete'];
   $stmt = $pdo->prepare("DELETE FROM mood_logs WHERE log_id = ?");
   $stmt->execute([$logId]);
   header("Location: manage_logs.php");
@@ -79,7 +81,11 @@ $logs = $stmt->fetchAll();
               <td><?= htmlspecialchars($log['note']) ?></td>
               <td><?= htmlspecialchars($log['log_date']) ?></td>
               <td>
-                <a href="?delete=<?= $log['log_id'] ?>" onclick="return confirm('Are you sure you want to delete this log?');" class="btn btn-danger btn-sm">Delete</a>
+                <form method="POST" class="d-inline" onsubmit="return confirm('Delete this mood log?')">
+                  <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES) ?>">
+                  <input type="hidden" name="delete" value="<?= (int)$log['log_id'] ?>">
+                  <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                </form>
               </td>
             </tr>
           <?php endforeach; ?>
