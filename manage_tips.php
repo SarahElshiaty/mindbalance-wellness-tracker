@@ -80,7 +80,7 @@ $tips = $stmt->fetchAll();
               <td><?= htmlspecialchars($tip['category']) ?></td>
               <td><?= htmlspecialchars($tip['icon']) ?></td>
               <td>
-                <a href="edit_tip.php?id=<?= $tip['id'] ?>" class="btn btn-sm btn-warning">Edit</a>
+                <a href="edit_tips.php?id=<?= $tip['id'] ?>" class="btn btn-sm btn-warning">Edit</a>
                 <form method="POST" class="d-inline" onsubmit="return confirm('Delete this tip?')">
                   <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES) ?>">
                   <input type="hidden" name="delete" value="<?= (int)$tip['id'] ?>">
