@@ -13,6 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   // Check if user exists and password is correct
   if ($user && password_verify($password, $user['password'])) {
+    session_regenerate_id(true);
     $_SESSION['user_id'] = $user['user_id'];
     $_SESSION['user'] = $user['name'];
     $_SESSION['role'] = $user['role'];
