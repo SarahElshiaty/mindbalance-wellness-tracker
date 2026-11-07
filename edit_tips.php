@@ -1,6 +1,7 @@
 <?php
 session_start();
 require 'db_connect.php';
+require 'csrf.php';
 
 if (!isset($_SESSION['user']) || $_SESSION['role'] !== 'admin') {
   header('Location: index.php');
@@ -26,6 +27,7 @@ if (!$tip) {
 
 // Handle update
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  require_csrf();
   $title = $_POST['title'] ?? '';
   $text = $_POST['text'] ?? '';
   $category = $_POST['category'] ?? '';
@@ -66,6 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
   <?php endif; ?>
   <form method="POST">
+    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES) ?>">
     <div class="mb-3">
       <label for="title" class="form-label">Title</label>
       <input type="text" class="form-control" id="title" name="title" value="<?= htmlspecialchars($tip['title']) ?>" required>
