@@ -1,6 +1,7 @@
 <?php
 session_start();
 require 'db_connect.php';
+require 'csrf.php';
 
 if (!isset($_SESSION['user']) || $_SESSION['role'] !== 'admin') {
   header('Location: index.php');
@@ -8,8 +9,9 @@ if (!isset($_SESSION['user']) || $_SESSION['role'] !== 'admin') {
 }
 
 // Handle deletion
-if (isset($_GET['delete'])) {
-  $id = (int)$_GET['delete'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete'])) {
+  require_csrf();
+  $id = (int)$_POST['delete'];
   $stmt = $pdo->prepare("DELETE FROM tips WHERE id = ?");
   $stmt->execute([$id]);
   header("Location: manage_tips.php");
@@ -79,7 +81,11 @@ $tips = $stmt->fetchAll();
               <td><?= htmlspecialchars($tip['icon']) ?></td>
               <td>
                 <a href="edit_tip.php?id=<?= $tip['id'] ?>" class="btn btn-sm btn-warning">Edit</a>
-                <a href="?delete=<?= $tip['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this tip?');">Delete</a>
+                <form method="POST" class="d-inline" onsubmit="return confirm('Delete this tip?')">
+                  <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES) ?>">
+                  <input type="hidden" name="delete" value="<?= (int)$tip['id'] ?>">
+                  <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                </form>
               </td>
             </tr>
           <?php endforeach; ?>
